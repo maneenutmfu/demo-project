@@ -13,8 +13,10 @@ import {
   getDocs,
   addDoc
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+import { รอผู้ใช้ล็อกอิน, ดึงชื่อผู้ใช้ } from "./auth-guard.js";
 
 (async function () {
+  var ผู้ใช้ = await รอผู้ใช้ล็อกอิน();
   var รหัสใบลา = ค่าจากURL("id");
   var กล่องใบลา = document.getElementById("กล่องใบลา");
   var กล่องความเห็น = document.getElementById("กล่องความเห็น");
@@ -163,9 +165,8 @@ import {
     เตือน.classList.add("hidden");
     ปุ่มส่ง.disabled = true;
 
-    // สัปดาห์ที่ 7 ยังไม่มีล็อกอิน จึงสมมติว่าผู้เขียนคือ สมหญิง รักงาน
     var ความเห็นใหม่ = {
-      authorId: "u002", authorName: "สมหญิง รักงาน",
+      authorId: ผู้ใช้.uid, authorName: await ดึงชื่อผู้ใช้(ผู้ใช้.uid),
       message: ข้อความ,
       createdAt: เวลาตอนนี้()
     };

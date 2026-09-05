@@ -8,8 +8,11 @@ import {
   collection,
   getDocs
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+import { รอผู้ใช้ล็อกอิน } from "./auth-guard.js";
 
 (async function () {
+  await รอผู้ใช้ล็อกอิน();
+
   var กล่อง = document.getElementById("ผลลัพธ์");
 
   var ใบลาทั้งหมด = [];

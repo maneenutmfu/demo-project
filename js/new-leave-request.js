@@ -8,8 +8,12 @@ import {
   collection,
   addDoc
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+import { รอผู้ใช้ล็อกอิน, ดึงชื่อผู้ใช้ } from "./auth-guard.js";
 
-(function () {
+(async function () {
+  var ผู้ใช้ = await รอผู้ใช้ล็อกอิน();
+  var ชื่อผู้ใช้ = await ดึงชื่อผู้ใช้(ผู้ใช้.uid);
+
   var ฟอร์ม = document.getElementById("ฟอร์มใบลา");
   var ช่องประเภท = document.getElementById("leaveTypeId");
   var กล่องเตือน = document.getElementById("ข้อความเตือน");
@@ -46,12 +50,11 @@ import {
 
     var ประเภท = window.LEAVE_DATA.leaveTypes.find(function (t) { return t.id === ค่า.leaveTypeId; });
 
-    // สัปดาห์ที่ 7 ยังไม่มีล็อกอิน จึงสมมติว่าผู้ขอลาคือ สมชาย ใจดี
     var ใบใหม่ = {
       title: ค่า.title,
       reason: ค่า.reason,
       status: "รอพิจารณา",                       // ใบใหม่เริ่มที่ รอพิจารณา เสมอ
-      requesterId: "u001", requesterName: "สมชาย ใจดี",
+      requesterId: ผู้ใช้.uid, requesterName: ชื่อผู้ใช้,
       approverId: "",      approverName: "",
       leaveTypeId: ประเภท.id, leaveTypeName: ประเภท.name,
       startDate: ค่า.startDate,
