@@ -1,0 +1,22 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      ".git/**",
+      ".obsidian/**",
+      "**/node_modules/**",
+      "package.json",
+      "package-lock.json",
+      "CLAUDE.md",
+      "leaveeasy-spec.md",
+      "README.md",
+      "ACL.md",
+      "serve.json"
+    ]
+  }
+}

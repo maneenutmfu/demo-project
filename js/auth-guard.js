@@ -22,11 +22,25 @@ var ตัวสัญญาผู้ใช้ = new Promise(function (resolve) 
     }
     แสดงผู้ใช้ในนำทาง(user);
     resolve(user);
+    รอบทบาทผู้ใช้().then(function (บทบาท) {
+      if (typeof ปรับเมนูตามบทบาท === "function") ปรับเมนูตามบทบาท(บทบาท);
+    });
   });
 });
 
+var ตัวสัญญาบทบาท = null;
+
 export function รอผู้ใช้ล็อกอิน() {
   return ตัวสัญญาผู้ใช้;
+}
+
+export function รอบทบาทผู้ใช้() {
+  if (!ตัวสัญญาบทบาท) {
+    ตัวสัญญาบทบาท = ตัวสัญญาผู้ใช้.then(function (user) {
+      return ดึงบทบาทผู้ใช้(user.uid);
+    });
+  }
+  return ตัวสัญญาบทบาท;
 }
 
 export async function ดึงชื่อผู้ใช้(uid) {
@@ -39,6 +53,18 @@ export async function ดึงชื่อผู้ใช้(uid) {
     // ปล่อยไปใช้ค่า fallback ด้านล่าง
   }
   return auth.currentUser ? auth.currentUser.email : "";
+}
+
+export async function ดึงบทบาทผู้ใช้(uid) {
+  try {
+    var สแนปช็อต = await getDoc(doc(db, "users", uid));
+    if (สแนปช็อต.exists() && สแนปช็อต.data().role) {
+      return สแนปช็อต.data().role;
+    }
+  } catch (err) {
+    // ปล่อยไปใช้ค่า fallback ด้านล่าง
+  }
+  return "employee";
 }
 
 function แสดงผู้ใช้ในนำทาง(user) {

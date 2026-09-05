@@ -8,10 +8,11 @@ import {
   collection,
   getDocs
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
-import { รอผู้ใช้ล็อกอิน } from "./auth-guard.js";
+import { รอผู้ใช้ล็อกอิน, รอบทบาทผู้ใช้ } from "./auth-guard.js";
 
 (async function () {
-  await รอผู้ใช้ล็อกอิน();
+  var ผู้ใช้ = await รอผู้ใช้ล็อกอิน();
+  var บทบาท = await รอบทบาทผู้ใช้();
 
   var กล่อง = document.getElementById("ผลลัพธ์");
 
@@ -25,6 +26,11 @@ import { รอผู้ใช้ล็อกอิน } from "./auth-guard.js";
     if (typeof showConfigWarning === "function") {
       showConfigWarning("อ่านข้อมูลจาก Firestore ไม่สำเร็จ: " + err.message);
     }
+  }
+
+  // เห็นเฉพาะใบของตัวเอง ถ้าบทบาทไม่มีสิทธิ์ดูใบลาทุกใบ
+  if (!ตรวจสิทธิ์("ดูใบลาทุกใบ", บทบาท)) {
+    ใบลาทั้งหมด = ใบลาทั้งหมด.filter(function (ใบ) { return ใบ.requesterId === ผู้ใช้.uid; });
   }
 
   // ถ้ามีสถานะติดมาท้าย URL ให้กรองเฉพาะสถานะนั้น

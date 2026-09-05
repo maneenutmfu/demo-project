@@ -13,10 +13,11 @@ import {
   getDocs,
   addDoc
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
-import { รอผู้ใช้ล็อกอิน, ดึงชื่อผู้ใช้ } from "./auth-guard.js";
+import { รอผู้ใช้ล็อกอิน, รอบทบาทผู้ใช้, ดึงชื่อผู้ใช้ } from "./auth-guard.js";
 
 (async function () {
   var ผู้ใช้ = await รอผู้ใช้ล็อกอิน();
+  var บทบาท = await รอบทบาทผู้ใช้();
   var รหัสใบลา = ค่าจากURL("id");
   var กล่องใบลา = document.getElementById("กล่องใบลา");
   var กล่องความเห็น = document.getElementById("กล่องความเห็น");
@@ -34,6 +35,12 @@ import { รอผู้ใช้ล็อกอิน, ดึงชื่อผ
 
   if (!ใบ) {
     กล่องใบลา.innerHTML = "<p>ไม่พบใบขอลาที่ต้องการ — อาจถูกลบไปแล้ว หรือลิงก์ไม่ถูกต้อง</p>";
+    return;
+  }
+
+  // ผู้ขอลาเปิดใบของคนอื่นไม่ได้ (กันแค่ฝั่งหน้าจอ ของจริงรอ Firestore rules สัปดาห์ที่ 8)
+  if (บทบาท === "employee" && ใบ.requesterId !== ผู้ใช้.uid) {
+    กล่องใบลา.innerHTML = "<p>คุณไม่มีสิทธิ์ดูใบลานี้</p>";
     return;
   }
 
@@ -71,25 +78,32 @@ import { รอผู้ใช้ล็อกอิน, ดึงชื่อผ
       return '<div class="field-row"><span class="k">' + r[0] + "</span><span>" + r[1] + "</span></div>";
     }).join("");
 
-    // ปุ่มอนุมัติ / ไม่อนุมัติ / ลบ ขึ้นเฉพาะใบที่ยังรอพิจารณา
-    if (ใบ.status === "รอพิจารณา") {
+    // ปุ่มอนุมัติ/ไม่อนุมัติ เฉพาะบทบาทที่มีสิทธิ์เปลี่ยนสถานะ · ปุ่มลบ เฉพาะเจ้าของใบเอง
+    // ขึ้นทั้งคู่ก็ต่อเมื่อใบยังรอพิจารณาอยู่
+    var เห็นปุ่มอนุมัติ = ใบ.status === "รอพิจารณา" && ตรวจสิทธิ์("เปลี่ยนสถานะใบลา", บทบาท);
+    var เห็นปุ่มลบ = ใบ.status === "รอพิจารณา" && บทบาท === "employee" && ใบ.requesterId === ผู้ใช้.uid;
+
+    if (เห็นปุ่มอนุมัติ) {
       html +=
         '<div class="btn-row">' +
         '<button type="button" class="btn-ok" id="ปุ่มอนุมัติ">อนุมัติ</button>' +
         '<button type="button" class="btn-danger" id="ปุ่มไม่อนุมัติ">ไม่อนุมัติ</button>' +
-        "</div>" +
-        '<div class="btn-row">' +
-        '<button type="button" class="btn-danger" id="ปุ่มลบ">ลบใบลานี้</button>' +
         "</div>";
-    } else {
+    }
+    if (เห็นปุ่มลบ) {
+      html += '<div class="btn-row"><button type="button" class="btn-danger" id="ปุ่มลบ">ลบใบลานี้</button></div>';
+    }
+    if (ใบ.status !== "รอพิจารณา") {
       html += '<p class="hint">ใบนี้พิจารณาแล้ว จึงเปลี่ยนสถานะต่อไม่ได้</p>';
     }
 
     กล่องใบลา.innerHTML = html;
 
-    if (ใบ.status === "รอพิจารณา") {
+    if (เห็นปุ่มอนุมัติ) {
       document.getElementById("ปุ่มอนุมัติ").addEventListener("click", function () { เปลี่ยนสถานะ("อนุมัติ"); });
       document.getElementById("ปุ่มไม่อนุมัติ").addEventListener("click", function () { เปลี่ยนสถานะ("ไม่อนุมัติ"); });
+    }
+    if (เห็นปุ่มลบ) {
       document.getElementById("ปุ่มลบ").addEventListener("click", ลบใบลา);
     }
   }

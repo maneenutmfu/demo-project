@@ -9,8 +9,8 @@
   var เมนู = [
     { href: "index.html",             ชื่อ: "หน้าแรก" },
     { href: "leave-requests.html",    ชื่อ: "รายการใบลา" },
-    { href: "new-leave-request.html", ชื่อ: "ยื่นใบลาใหม่" },
-    { href: "leave-types.html",       ชื่อ: "ประเภทการลา" }
+    { href: "new-leave-request.html", ชื่อ: "ยื่นใบลาใหม่",  บทบาท: ["employee"] },
+    { href: "leave-types.html",       ชื่อ: "ประเภทการลา",   บทบาท: ["hr"] }
   ];
 
   // ชื่อไฟล์ของหน้าที่กำลังเปิดอยู่ เอาไว้ขีดเส้นใต้เมนูที่ตรงกัน
@@ -19,7 +19,8 @@
   var html = '<div class="navbar"><span class="brand">🔧 LeaveEasy</span>';
   เมนู.forEach(function (m) {
     var active = m.href === หน้าปัจจุบัน ? ' class="active"' : "";
-    html += '<a href="' + m.href + '"' + active + ">" + m.ชื่อ + "</a>";
+    var dataRoles = m.บทบาท ? ' data-roles="' + m.บทบาท.join(",") + '"' : "";
+    html += '<a href="' + m.href + '"' + active + dataRoles + ">" + m.ชื่อ + "</a>";
   });
   // ช่องว่างสำหรับแสดงชื่อคนที่ล็อกอินอยู่ (เติมค่าในสัปดาห์ที่ 7)
   html += '<span class="nav-user" id="navUser"></span></div>';
@@ -27,6 +28,14 @@
   var ที่วาง = document.getElementById("nav");
   if (ที่วาง) ที่วาง.innerHTML = html;
 })();
+
+// ซ่อนเมนูที่บทบาทปัจจุบันเข้าไม่ได้ (เรียกจาก auth-guard.js หลังรู้ role ของผู้ใช้)
+function ปรับเมนูตามบทบาท(บทบาท) {
+  document.querySelectorAll("#nav a[data-roles]").forEach(function (ลิงก์) {
+    var บทบาทที่อนุญาต = ลิงก์.dataset.roles.split(",");
+    if (บทบาทที่อนุญาต.indexOf(บทบาท) === -1) ลิงก์.classList.add("hidden");
+  });
+}
 
 // แถบเตือนสีเหลือง ใช้ตอนที่ยังไม่ได้ตั้งค่า Firebase
 function showConfigWarning(ข้อความ) {

@@ -8,10 +8,19 @@ import {
   collection,
   addDoc
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
-import { รอผู้ใช้ล็อกอิน, ดึงชื่อผู้ใช้ } from "./auth-guard.js";
+import { รอผู้ใช้ล็อกอิน, รอบทบาทผู้ใช้, ดึงชื่อผู้ใช้ } from "./auth-guard.js";
 
 (async function () {
   var ผู้ใช้ = await รอผู้ใช้ล็อกอิน();
+  var บทบาท = await รอบทบาทผู้ใช้();
+
+  // หน้านี้สำหรับผู้ขอลาเท่านั้น กันเข้าถึงตรง ๆ ทาง URL
+  if (!ตรวจสิทธิ์("ยื่นใบลาใหม่", บทบาท)) {
+    alert("หน้านี้สำหรับผู้ขอลาเท่านั้น");
+    location.href = "leave-requests.html";
+    return;
+  }
+
   var ชื่อผู้ใช้ = await ดึงชื่อผู้ใช้(ผู้ใช้.uid);
 
   var ฟอร์ม = document.getElementById("ฟอร์มใบลา");
