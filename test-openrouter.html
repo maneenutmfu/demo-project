@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ทดสอบ OpenRouter</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+    button { font-size: 16px; padding: 10px 20px; cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: 0.6; }
+    #สถานะ { color: #666; margin-top: 12px; }
+    #คำตอบ { white-space: pre-wrap; margin-top: 12px; padding: 16px; background: #f5f5f5; border-radius: 8px; min-height: 24px; }
+  </style>
+</head>
+<body>
+  <h1>ทดสอบเรียก AI ผ่าน OpenRouter</h1>
+  <p>หน้านี้เป็นไฟล์ทดสอบแยกต่างหาก ไม่ใช่ส่วนหนึ่งของระบบ LeaveEasy — กดปุ่มเพื่อส่งข้อความ "สวัสดี" ไปยังโมเดล google/gemini-2.5-flash-lite</p>
+
+  <button id="ปุ่มส่ง">ส่งข้อความ "สวัสดี"</button>
+  <div id="สถานะ"></div>
+  <div id="คำตอบ"></div>
+
+  <script src="openrouter-key.local.js"></script>
+  <script src="test-openrouter.js" defer></script>
+</body>
+</html>

@@ -2,6 +2,8 @@
   "cleanUrls": false,
   "rewrites": [
     { "source": "/index", "destination": "/index.html" },
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/signup", "destination": "/signup.html" },
     { "source": "/leave-requests", "destination": "/leave-requests.html" },
     { "source": "/new-leave-request", "destination": "/new-leave-request.html" },
     { "source": "/leave-request-detail", "destination": "/leave-request-detail.html" },

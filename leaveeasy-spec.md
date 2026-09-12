@@ -272,9 +272,11 @@ users (ผู้ใช้)         ── 1:N ──►  leave_requests (ใบ�
               requesterId,  requesterName,   ← จดชื่อซ้ำไว้เลย
               approverId,   approverName,    ← จดชื่อซ้ำไว้เลย
               leaveTypeId,  leaveTypeName,   ← จดชื่อซ้ำไว้เลย
-              startDate, endDate, createdAt }
+              startDate, endDate, createdAt, aiSuggestion }
       📁 approvals/                          ← โฟลเดอร์ย่อยที่ซ้อนอยู่ในไฟล์ lr001
          📄 ap001 { authorId, authorName, message, createdAt }
+      📁 aiLog/                              ← โฟลเดอร์ย่อยบันทึกประวัติทุกครั้งที่เรียก AI สรุปใบลา
+         📄 (auto-id) { input, output, createdAt }
 ```
 
 > ⚠️ **ชื่อโฟลเดอร์บน Firestore เขียนติดกันแบบไม่มีขีดล่าง** — ตาราง `leave_requests` กลายเป็นโฟลเดอร์ `leaveRequests` และ `leave_types` กลายเป็น `leaveTypes`
@@ -311,10 +313,14 @@ users (ผู้ใช้)         ── 1:N ──►  leave_requests (ใบ�
 | | `leaveTypeName` | ข้อความ | 🔁 **จดซ้ำ** — ชื่อประเภทการลา |
 | | `createdAt` | วันเวลา | วันเวลาที่ยื่นใบลา |
 | | `attachmentUrl` | ข้อความ | ลิงก์เอกสารที่แนบ — **เพิ่มในสัปดาห์ที่ 9** |
+| | `aiSuggestion` | ข้อความ | สรุปใบลาโดย AI ให้ผู้อนุมัติอ่านก่อนตัดสินใจ — **เพิ่มในสัปดาห์ที่ 8** |
 | `approvals` | `authorId` | ข้อความ | ชื่อไฟล์ของผู้เขียนในโฟลเดอร์ `users` |
 | | `authorName` | ข้อความ | 🔁 **จดซ้ำ** — ชื่อผู้เขียน |
 | | `message` | ข้อความ | ข้อความความเห็น |
 | | `createdAt` | วันเวลา | วันเวลาที่เขียน |
+| `aiLog` | `input` | ข้อความ | ข้อความที่ส่งไปให้ AI ตอนเรียกสรุปใบลา — **เพิ่มในสัปดาห์ที่ 8** |
+| | `output` | ข้อความ | ข้อความที่ AI ตอบกลับมา (หรือข้อความข้อผิดพลาดถ้าเรียกไม่สำเร็จ) |
+| | `createdAt` | วันเวลา | วันเวลาที่เรียก AI ครั้งนั้น |
 
 ### 5.3 ข้อมูลที่จดซ้ำไว้ (denormalize) และเหตุผล
 

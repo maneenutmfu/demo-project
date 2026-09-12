@@ -83,6 +83,24 @@ import { รอผู้ใช้ล็อกอิน, รอบทบาทผ
     var เห็นปุ่มอนุมัติ = ใบ.status === "รอพิจารณา" && ตรวจสิทธิ์("เปลี่ยนสถานะใบลา", บทบาท);
     var เห็นปุ่มลบ = ใบ.status === "รอพิจารณา" && บทบาท === "employee" && ใบ.requesterId === ผู้ใช้.uid;
 
+    // สรุปใบลาโดย AI ให้หัวหน้าอ่านก่อนกดอนุมัติ (สัปดาห์ที่ 8)
+    // แสดงสรุปที่มีอยู่แล้วให้ทุกคนเห็น · ปุ่ม (สร้าง/แก้ไข) สรุปใหม่ ให้เฉพาะคนที่มีสิทธิ์อนุมัติตอนใบยังรอพิจารณา
+    if (ใบ.aiSuggestion || เห็นปุ่มอนุมัติ) {
+      html +=
+        '<div style="margin-top:16px;">' +
+        "<h2>สรุปจาก AI</h2>" +
+        '<div id="ข้อความสรุปAI" class="alert alert-ai">' +
+        (ใบ.aiSuggestion ? esc(ใบ.aiSuggestion) : "ยังไม่มีสรุปจาก AI") +
+        "</div>";
+      if (เห็นปุ่มอนุมัติ) {
+        html +=
+          '<p class="hint">ข้อเสนอจาก AI — โปรดตรวจสอบก่อนตัดสินใจ</p>' +
+          '<div class="btn-row"><button type="button" class="btn-ghost" id="ปุ่มสรุปAI">ให้ AI ช่วยสรุปใบลา</button></div>' +
+          '<div id="เตือนสรุปAI" class="alert alert-error hidden"></div>';
+      }
+      html += "</div>";
+    }
+
     if (เห็นปุ่มอนุมัติ) {
       html +=
         '<div class="btn-row">' +
@@ -102,9 +120,96 @@ import { รอผู้ใช้ล็อกอิน, รอบทบาทผ
     if (เห็นปุ่มอนุมัติ) {
       document.getElementById("ปุ่มอนุมัติ").addEventListener("click", function () { เปลี่ยนสถานะ("อนุมัติ"); });
       document.getElementById("ปุ่มไม่อนุมัติ").addEventListener("click", function () { เปลี่ยนสถานะ("ไม่อนุมัติ"); });
+      document.getElementById("ปุ่มสรุปAI").addEventListener("click", สรุปด้วยAI);
     }
     if (เห็นปุ่มลบ) {
       document.getElementById("ปุ่มลบ").addEventListener("click", ลบใบลา);
+    }
+  }
+
+  // ── ให้ AI ช่วยสรุปใบลาให้หัวหน้าอ่านก่อนกดอนุมัติ — เขียนผลกลับลงฟิลด์ aiSuggestion ──
+  async function สรุปด้วยAI() {
+    var ปุ่มสรุปAI = document.getElementById("ปุ่มสรุปAI");
+    var เตือนสรุปAI = document.getElementById("เตือนสรุปAI");
+    var ข้อความสรุปAI = document.getElementById("ข้อความสรุปAI");
+
+    เตือนสรุปAI.classList.add("hidden");
+
+    if (!window.OPENROUTER_API_KEY) {
+      เตือนสรุปAI.textContent = "⚠️ ยังไม่ได้ตั้งค่าคีย์ AI (openrouter-key.local.js)";
+      เตือนสรุปAI.classList.remove("hidden");
+      return;
+    }
+
+    var ข้อความปุ่มปกติ = ปุ่มสรุปAI.textContent;
+    ปุ่มสรุปAI.disabled = true;
+    ปุ่มสรุปAI.textContent = "กำลังสรุป...";
+
+    var ตัวควบคุมยกเลิก = new AbortController();
+    var ตัวจับเวลา = setTimeout(function () { ตัวควบคุมยกเลิก.abort(); }, 15000);
+
+    var ข้อความผู้ใช้ =
+      "ช่วยสรุปใบลานี้:\n" +
+      "หัวข้อ: " + ใบ.title + "\n" +
+      "ประเภทการลา: " + ใบ.leaveTypeName + "\n" +
+      "ผู้ขอลา: " + ใบ.requesterName + "\n" +
+      "วันที่ลา: " + ใบ.startDate + " ถึง " + ใบ.endDate + "\n" +
+      "เหตุผล: " + ใบ.reason;
+
+    try {
+      var ผลตอบกลับ = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        signal: ตัวควบคุมยกเลิก.signal,
+        headers: {
+          "Authorization": "Bearer " + window.OPENROUTER_API_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-lite",
+          messages: [
+            {
+              role: "system",
+              content: "คุณคือผู้ช่วยสรุปใบลาให้หัวหน้าอ่านก่อนตัดสินใจอนุมัติ ตอบกลับเป็นข้อความสรุปภาษาไทยสั้น กระชับ 1-2 ประโยคเท่านั้น ห้ามมีข้อความอื่นปน"
+            },
+            { role: "user", content: ข้อความผู้ใช้ }
+          ]
+        })
+      });
+
+      if (!ผลตอบกลับ.ok) throw new Error("สถานะ " + ผลตอบกลับ.status);
+
+      var ข้อมูล = await ผลตอบกลับ.json();
+      var สรุป = (ข้อมูล.choices && ข้อมูล.choices[0] && ข้อมูล.choices[0].message && ข้อมูล.choices[0].message.content || "").trim();
+
+      if (!สรุป) throw new Error("ไม่ได้รับข้อความสรุปกลับมา");
+
+      await updateDoc(doc(db, "leaveRequests", รหัสใบลา), { aiSuggestion: สรุป });
+      ใบ.aiSuggestion = สรุป;
+      await บันทึกล็อกAI(ข้อความผู้ใช้, สรุป);
+      วาดใบลา();
+    } catch (err) {
+      var ข้อความล้มเหลว = (err.name === "AbortError" ? "หมดเวลารอ" : err.message);
+      ข้อความสรุปAI.textContent = ใบ.aiSuggestion || "ยังไม่มีสรุปจาก AI";
+      เตือนสรุปAI.textContent = "⚠️ เรียก AI ไม่สำเร็จ: " + ข้อความล้มเหลว;
+      เตือนสรุปAI.classList.remove("hidden");
+      ปุ่มสรุปAI.disabled = false;
+      ปุ่มสรุปAI.textContent = ข้อความปุ่มปกติ;
+      await บันทึกล็อกAI(ข้อความผู้ใช้, "[ล้มเหลว] " + ข้อความล้มเหลว);
+    } finally {
+      clearTimeout(ตัวจับเวลา);
+    }
+  }
+
+  // ── บันทึกประวัติการเรียก AI ทุกครั้งไว้ในโฟลเดอร์ย่อย aiLog ของใบนี้ ──
+  async function บันทึกล็อกAI(input, output) {
+    try {
+      await addDoc(collection(db, "leaveRequests", รหัสใบลา, "aiLog"), {
+        input: input,
+        output: output,
+        createdAt: เวลาตอนนี้()
+      });
+    } catch (err) {
+      // บันทึกล็อกไม่สำเร็จ ไม่บล็อกการแสดงผลสรุป
     }
   }
 
