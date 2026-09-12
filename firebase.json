@@ -16,7 +16,9 @@
       "leaveeasy-spec.md",
       "README.md",
       "ACL.md",
-      "serve.json"
+      "serve.json",
+      "*.local.*",
+      "**/*.local.*"
     ]
   }
 }
